@@ -57,3 +57,25 @@ This logs every step under `logs/` and prints the final test-set metrics
 - Unit tests for each pipeline stage
 - Hyperparameter tuning + experiment tracking (MLflow)
 - CI/CD + Docker packaging
+## Fair-price notebook model
+
+Run `notebook/01_used_car_fair_price_EDA.ipynb`, then `notebook/02_used_car_fair_price_model_training.ipynb` from the project virtual environment. The training notebook compares CatBoost, LightGBM, XGBoost, and a median baseline using the same split. It exports the selected model to `notebook/artifacts/fair_price_model.joblib`.
+
+Use the same feature engineering in an application through `src.pipeline.fair_price_inference.predict_fair_price`:
+
+```python
+from src.pipeline.fair_price_inference import predict_fair_price
+
+result = predict_fair_price({
+    "manufacturer": "トヨタ",
+    "model": "アルファード",
+    "registration_year": 2021,
+    "mileage_km": 42000,
+})
+```
+
+The prediction estimates advertised vehicle price, not a completed sale price. The interval is calibrated to 80% nominal coverage on the source snapshot. Validate on later listings before public deployment, monitor errors by vehicle segment, and retrain as the market changes. Load model artifacts only from trusted sources.
+
+## GitHub and MLOps workflow
+
+See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for the latest evaluation. Follow [`docs/GITHUB_MLOPS_PUSH.md`](docs/GITHUB_MLOPS_PUSH.md) for the reviewed branch, pull-request, and model-promotion workflow. Raw datasets and trained artifacts belong in versioned S3 locations and are intentionally excluded from Git.

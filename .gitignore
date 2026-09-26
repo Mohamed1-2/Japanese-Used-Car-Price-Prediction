@@ -8,7 +8,6 @@ __pycache__/
 # Virtual environments
 # ----------------------
 .venv/
-.venv-1/
 venv/
 
 # ----------------------
@@ -23,21 +22,20 @@ venv/
 
 # ----------------------
 # Data
-# Do not upload scraped dataset to GitHub
 # ----------------------
-data/raw/*.csv
-data/processed/*
+data/
 
+
+docs/
 # ----------------------
 # Model artifacts
 # ----------------------
 artifacts/
 *.pkl
+*.joblib
 *.cbm
 
-# ----------------------
-# MLflow - later
-# ----------------------
+
 mlruns/
 mlartifacts/
 mlflow.db
