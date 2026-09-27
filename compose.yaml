@@ -1,0 +1,13 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      APP_ENV: local-docker
+      MODEL_PATH: /models/fair_price_model.joblib
+      UI_OPTIONS_PATH: /models/ui_options.json
+      CORS_ORIGINS: http://localhost:3000
+    volumes:
+      - ./notebook/artifacts:/models:ro
+    restart: unless-stopped
