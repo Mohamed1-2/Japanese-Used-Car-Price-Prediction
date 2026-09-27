@@ -30,3 +30,17 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build production image
         run: docker build --tag fair-price-api:${{ github.sha }} .
+
+  terraform:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.10.5"
+      - name: Check Terraform formatting
+        run: terraform -chdir=infra/terraform fmt -check -recursive
+      - name: Initialize Terraform providers
+        run: terraform -chdir=infra/terraform init -backend=false
+      - name: Validate Terraform
+        run: terraform -chdir=infra/terraform validate

@@ -1,0 +1,98 @@
+name: Deploy API to AWS
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: production-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION }}
+      ECR_REPOSITORY: ${{ vars.ECR_REPOSITORY }}
+      ECS_CLUSTER: ${{ vars.ECS_CLUSTER }}
+      ECS_SERVICE: ${{ vars.ECS_SERVICE }}
+      ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY }}
+      ECS_CONTAINER: ${{ vars.ECS_CONTAINER }}
+      API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure temporary AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push immutable image
+        id: image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image_uri="${{ steps.ecr.outputs.registry }}/${ECR_REPOSITORY}:${GITHUB_SHA}"
+          if ! aws ecr describe-images \
+            --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$GITHUB_SHA" >/dev/null 2>&1; then
+            docker build --tag "$image_uri" .
+            docker push "$image_uri"
+          fi
+          echo "uri=$image_uri" >> "$GITHUB_OUTPUT"
+
+      - name: Download current task definition
+        shell: bash
+        run: |
+          set -euo pipefail
+          aws ecs describe-task-definition \
+            --task-definition "$ECS_TASK_FAMILY" \
+            --query taskDefinition > task-definition-raw.json
+          jq 'del(
+            .taskDefinitionArn,
+            .revision,
+            .status,
+            .requiresAttributes,
+            .compatibilities,
+            .registeredAt,
+            .registeredBy
+          )' task-definition-raw.json > task-definition.json
+
+      - name: Render task definition
+        id: render
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: ${{ env.ECS_CONTAINER }}
+          image: ${{ steps.image.outputs.uri }}
+
+      - name: Deploy task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.render.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
+
+      - name: Verify deployed health endpoint
+        if: ${{ env.API_HEALTH_URL != '' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..20}; do
+            if curl --fail --silent --show-error "$API_HEALTH_URL"; then
+              exit 0
+            fi
+            sleep 15
+          done
+          exit 1
