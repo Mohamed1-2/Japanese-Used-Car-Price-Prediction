@@ -52,6 +52,16 @@ logs/
 *.log
 
 # ----------------------
+# Terraform local state
+# ----------------------
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+terraform.tfvars
+crash.log
+
+# ----------------------
 # OS files
 # ----------------------
 .DS_Store

@@ -1,0 +1,24 @@
+aws_region  = "ap-northeast-1"
+environment = "prod"
+
+# Keep false for the first apply. Push the first image and upload the model,
+# then change to true and apply again.
+service_enabled = false
+
+desired_count = 2
+max_count     = 6
+
+model_object_key      = "models/fair-price/v1/fair_price_model.joblib"
+ui_options_object_key = "models/fair-price/v1/ui_options.json"
+model_sha256           = "ed2c5530e5a84cba1d108ce4d283d4424e4214deff9aa8b82f1de618a9eafd3c"
+
+# Set this to the deployed frontend origin before public use.
+cors_origins = ""
+
+# Add an ACM certificate after your DNS name is ready. HTTP is intended only
+# for initial validation; public production traffic should use HTTPS.
+certificate_arn = null
+
+# If the AWS account already has token.actions.githubusercontent.com configured,
+# provide its ARN to prevent creation of a duplicate account-level provider.
+existing_github_oidc_provider_arn = null

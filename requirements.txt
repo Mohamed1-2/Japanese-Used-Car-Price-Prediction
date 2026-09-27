@@ -11,6 +11,7 @@ seaborn==0.13.2
 fastapi==0.141.1
 pydantic==2.13.5
 uvicorn[standard]==0.47.0
+boto3==1.43.103
 httpx==0.28.1
 python-dotenv==1.0.1
 pytest==8.3.4

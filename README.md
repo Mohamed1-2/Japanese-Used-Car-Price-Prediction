@@ -110,3 +110,44 @@ Run in Docker with the local model artifact mounted read-only:
 ```bash
 docker compose up --build
 ```
+
+## AWS deployment
+
+AWS infrastructure is defined in `infra/terraform`. It provisions a versioned
+private S3 model bucket, ECR repository, private ECS Fargate tasks, public
+Application Load Balancer, CloudWatch logs, autoscaling, deployment rollback,
+and a least-privilege GitHub OIDC role.
+
+The production container downloads the approved model from S3 during startup
+and verifies its SHA-256 before loading it. Long-lived AWS keys are not used by
+GitHub Actions.
+
+Initialize the infrastructure with the service disabled because ECR is empty:
+
+```bash
+cd infra/terraform
+cp terraform.tfvars.example terraform.tfvars
+terraform init
+terraform plan -out=tfplan
+terraform apply tfplan
+```
+
+Upload the approved model using the bucket name from `terraform output`:
+
+```bash
+cd ../..
+python scripts/publish_model_artifacts.py \
+  --bucket "$(terraform -chdir=infra/terraform output -raw artifact_bucket)" \
+  --expected-model-sha256 ed2c5530e5a84cba1d108ce4d283d4424e4214deff9aa8b82f1de618a9eafd3c
+```
+
+Create a protected GitHub environment named `production`, then add the
+repository variables returned by:
+
+```bash
+terraform -chdir=infra/terraform output -json github_repository_variables
+```
+
+Run the `Deploy API to AWS` workflow once to push the first image. Finally set
+`service_enabled = true` in `terraform.tfvars` and run plan/apply again to start
+the Fargate tasks.
