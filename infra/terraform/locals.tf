@@ -1,6 +1,10 @@
 locals {
   name = "${var.project_name}-${var.environment}"
 
+  artifact_bucket_name = var.existing_artifact_bucket_name != null ? var.existing_artifact_bucket_name : "${local.name}-models-${random_id.bucket_suffix[0].hex}"
+  ecr_repository_name  = var.existing_ecr_repository_name != null ? var.existing_ecr_repository_name : "${local.name}-api"
+  log_group_name       = var.existing_log_group_name != null ? var.existing_log_group_name : "/ecs/${local.name}-api"
+
   common_tags = {
     Project     = var.project_name
     Environment = var.environment
@@ -24,5 +28,6 @@ data "tls_certificate" "github" {
 }
 
 resource "random_id" "bucket_suffix" {
+  count       = var.existing_artifact_bucket_name == null ? 1 : 0
   byte_length = 4
 }
