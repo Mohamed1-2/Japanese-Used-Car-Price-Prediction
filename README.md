@@ -47,16 +47,6 @@ python -m src.pipeline.train_pipeline
 This logs every step under `logs/` and prints the final test-set metrics
 (R² / MAE / RMSE) for the best of several regressors.
 
-## Roadmap (next phases)
-
-- Prediction pipeline: load the saved `preprocessor.pkl` + `model.pkl` to price new cars
-- Flask API endpoint to serve predictions over HTTP
-- Unit tests for each pipeline stage
-- Hyperparameter tuning + experiment tracking (MLflow)
-- CI/CD + Docker packaging
-- Unit tests for each pipeline stage
-- Hyperparameter tuning + experiment tracking (MLflow)
-- CI/CD + Docker packaging
 ## Fair-price notebook model
 
 Run `notebook/01_used_car_fair_price_EDA.ipynb`, then `notebook/02_used_car_fair_price_model_training.ipynb` from the project virtual environment. The training notebook compares CatBoost, LightGBM, XGBoost, and a median baseline using the same split. It exports the selected model to `notebook/artifacts/fair_price_model.joblib`.
@@ -76,6 +66,47 @@ result = predict_fair_price({
 
 The prediction estimates advertised vehicle price, not a completed sale price. The interval is calibrated to 80% nominal coverage on the source snapshot. Validate on later listings before public deployment, monitor errors by vehicle segment, and retrain as the market changes. Load model artifacts only from trusted sources.
 
-## GitHub and MLOps workflow
+## Production API
 
-See [`docs/MODEL_CARD.md`](docs/MODEL_CARD.md) for the latest evaluation. Follow [`docs/GITHUB_MLOPS_PUSH.md`](docs/GITHUB_MLOPS_PUSH.md) for the reviewed branch, pull-request, and model-promotion workflow. Raw datasets and trained artifacts belong in versioned S3 locations and are intentionally excluded from Git.
+Install the API dependencies and run locally:
+
+```bash
+python -m pip install -r requirements-api.txt
+MODEL_PATH=notebook/artifacts/fair_price_model.joblib \
+UI_OPTIONS_PATH=notebook/artifacts/ui_options.json \
+uvicorn app.main:app --reload
+```
+
+OpenAPI is available at `http://localhost:8000/docs`. The primary endpoints are:
+
+- `GET /health`
+- `GET /v1/model-info`
+- `GET /v1/options`
+- `POST /v1/predict`
+
+Example prediction:
+
+```bash
+curl -X POST http://localhost:8000/v1/predict \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "manufacturer": "トヨタ",
+    "model": "アルファード",
+    "registration_year": 2021,
+    "mileage_km": 42000,
+    "fuel": "ガソリン"
+  }'
+```
+
+Run tests:
+
+```bash
+python -m pip install -r requirements-dev.txt
+pytest -q
+```
+
+Run in Docker with the local model artifact mounted read-only:
+
+```bash
+docker compose up --build
+```

@@ -1,10 +1,16 @@
 """Production inference for the Japanese used-car listing-price model."""
+
+from functools import lru_cache
+import hashlib
 from pathlib import Path
 import re
 import unicodedata
+import warnings
+
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.exceptions import InconsistentVersionWarning
 
 RAW_INPUT_FEATURES = ["manufacturer", "model", "trim", "registration_year", "mileage_km", "fuel", "transmission", "drivetrain", "repair_history", "prefecture"]
 MANDATORY_INPUTS = ["manufacturer", "model", "registration_year", "mileage_km"]
@@ -215,34 +221,132 @@ def build_model_features(raw_frame, reference_year):
 
     return x[MODEL_FEATURES]
 
-def predict_fair_price(payload, artifact_path=DEFAULT_ARTIFACT):
-    """Return an estimated listing price and calibrated range in JPY."""
-    if not isinstance(payload, dict):
-        raise ValueError("payload must be a JSON object")
-    missing = [key for key in MANDATORY_INPUTS if payload.get(key) is None or payload.get(key) == ""]
-    if missing:
-        raise ValueError(f"Missing mandatory input(s): {missing}")
-    artifact = joblib.load(artifact_path)
-    year = int(artifact["reference_year"])
-    try:
-        registration_year = int(payload["registration_year"])
-        mileage_km = float(payload["mileage_km"])
-    except (TypeError, ValueError):
-        raise ValueError("registration_year and mileage_km must be numeric") from None
-    if not 1900 <= registration_year <= year + 1:
-        raise ValueError("registration_year is outside the supported range")
-    if not np.isfinite(mileage_km) or not 0 <= mileage_km <= 2_000_000:
-        raise ValueError("mileage_km is outside the supported range")
-    x = build_model_features(pd.DataFrame([payload]), reference_year=year)
-    if x.columns.tolist() != artifact["model_features"]:
-        raise ValueError("Feature schema differs from the trained model")
-    point_log = float(artifact["model"].predict(x)[0])
-    q = float(artifact["conformal_q_hat"])
-    return {
-        "estimated_fair_price_jpy": round(max(0, np.expm1(point_log))),
-        "expected_range_low_jpy": round(max(0, np.expm1(point_log - q))),
-        "expected_range_high_jpy": round(max(0, np.expm1(point_log + q))),
-        "target_interval_coverage": 0.80,
-        "model_reference_year": year,
-        "valuation_basis": "advertised_vehicle_price",
+class FairPricePredictor:
+    """Load one trusted model artifact and serve repeatable predictions."""
+
+    REQUIRED_ARTIFACT_KEYS = {
+        "model_name",
+        "model",
+        "reference_year",
+        "conformal_q_hat",
+        "model_features",
     }
+
+    def __init__(self, artifact_path=DEFAULT_ARTIFACT):
+        self.artifact_path = Path(artifact_path).expanduser().resolve()
+        if not self.artifact_path.is_file():
+            raise FileNotFoundError(
+                f"Model artifact not found: {self.artifact_path}"
+            )
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("error", category=InconsistentVersionWarning)
+            try:
+                self.artifact = joblib.load(self.artifact_path)
+            except InconsistentVersionWarning as exc:
+                raise RuntimeError(
+                    "Model artifact and scikit-learn runtime versions are "
+                    "incompatible. Rebuild the image with the training version."
+                ) from exc
+        missing = self.REQUIRED_ARTIFACT_KEYS.difference(self.artifact)
+        if missing:
+            raise ValueError(
+                f"Model artifact is missing required keys: {sorted(missing)}"
+            )
+        if list(self.artifact["model_features"]) != MODEL_FEATURES:
+            raise ValueError(
+                "Model artifact feature schema differs from production code."
+            )
+
+        self.model = self.artifact["model"]
+        self.reference_year = int(self.artifact["reference_year"])
+        self.conformal_q_hat = float(self.artifact["conformal_q_hat"])
+        self.model_name = str(self.artifact["model_name"])
+        self.artifact_sha256 = self._sha256(self.artifact_path)
+
+    @staticmethod
+    def _sha256(path):
+        digest = hashlib.sha256()
+        with Path(path).open("rb") as artifact_file:
+            for chunk in iter(lambda: artifact_file.read(1024 * 1024), b""):
+                digest.update(chunk)
+        return digest.hexdigest()
+
+    def model_info(self):
+        """Return deployment-safe model metadata."""
+        return {
+            "model_name": self.model_name,
+            "model_reference_year": self.reference_year,
+            "model_features": list(self.artifact["model_features"]),
+            "feature_count": len(self.artifact["model_features"]),
+            "target_interval_coverage": 0.80,
+            "valuation_basis": "advertised_vehicle_price",
+            "artifact_sha256": self.artifact_sha256,
+        }
+
+    def predict(self, payload):
+        """Return an estimated listing price and calibrated range in JPY."""
+        self._validate_payload(payload)
+        features = build_model_features(
+            pd.DataFrame([payload]),
+            reference_year=self.reference_year,
+        )
+        # The serialized sklearn pipeline preserves a fixed transformer order.
+        # LightGBM may still emit a cosmetic feature-name warning after the
+        # transformer converts the DataFrame to its numerical matrix.
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message=(
+                    "X does not have valid feature names, but LGBMRegressor "
+                    "was fitted with feature names"
+                ),
+            )
+            point_log = float(self.model.predict(features)[0])
+        q_hat = self.conformal_q_hat
+        return {
+            "estimated_fair_price_jpy": round(max(0, np.expm1(point_log))),
+            "expected_range_low_jpy": round(
+                max(0, np.expm1(point_log - q_hat))
+            ),
+            "expected_range_high_jpy": round(
+                max(0, np.expm1(point_log + q_hat))
+            ),
+            "target_interval_coverage": 0.80,
+            "model_reference_year": self.reference_year,
+            "valuation_basis": "advertised_vehicle_price",
+        }
+
+    def _validate_payload(self, payload):
+        """Validate constraints that depend on the loaded model version."""
+        if not isinstance(payload, dict):
+            raise ValueError("payload must be a JSON object")
+        missing = [
+            key
+            for key in MANDATORY_INPUTS
+            if payload.get(key) is None or payload.get(key) == ""
+        ]
+        if missing:
+            raise ValueError(f"Missing mandatory input(s): {missing}")
+        try:
+            registration_year = int(payload["registration_year"])
+            mileage_km = float(payload["mileage_km"])
+        except (TypeError, ValueError):
+            raise ValueError(
+                "registration_year and mileage_km must be numeric"
+            ) from None
+        if not 1900 <= registration_year <= self.reference_year + 1:
+            raise ValueError("registration_year is outside the supported range")
+        if not np.isfinite(mileage_km) or not 0 <= mileage_km <= 2_000_000:
+            raise ValueError("mileage_km is outside the supported range")
+
+
+@lru_cache(maxsize=4)
+def _cached_predictor(artifact_path):
+    return FairPricePredictor(artifact_path)
+
+
+def predict_fair_price(payload, artifact_path=DEFAULT_ARTIFACT):
+    """Backward-compatible single-payload prediction function."""
+    predictor = _cached_predictor(str(Path(artifact_path).resolve()))
+    return predictor.predict(payload)
