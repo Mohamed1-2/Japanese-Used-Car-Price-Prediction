@@ -14,6 +14,7 @@ locals {
   availability_zones = slice(data.aws_availability_zones.available.names, 0, 2)
 
   github_oidc_provider_arn = var.existing_github_oidc_provider_arn != null ? var.existing_github_oidc_provider_arn : aws_iam_openid_connect_provider.github[0].arn
+  github_oidc_subject      = var.github_oidc_subject != null ? var.github_oidc_subject : "repo:${var.github_owner}/${var.github_repository}:environment:${var.github_environment}"
 }
 
 data "aws_availability_zones" "available" {
