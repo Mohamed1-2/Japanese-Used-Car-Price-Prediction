@@ -128,6 +128,13 @@ variable "github_environment" {
   default = "production"
 }
 
+variable "github_oidc_subject" {
+  description = "Exact GitHub OIDC sub claim. Set this for organizations that include stable owner and repository IDs in the subject."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "existing_github_oidc_provider_arn" {
   description = "Use an account-level GitHub OIDC provider ARN if one already exists."
   type        = string
