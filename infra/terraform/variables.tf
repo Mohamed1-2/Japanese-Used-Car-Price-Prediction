@@ -16,6 +16,27 @@ variable "environment" {
   default     = "prod"
 }
 
+variable "existing_artifact_bucket_name" {
+  description = "Existing S3 model bucket to adopt during migration. Leave null for a new bucket."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "existing_ecr_repository_name" {
+  description = "Existing ECR repository to adopt during migration. Leave null for a new repository."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
+variable "existing_log_group_name" {
+  description = "Existing CloudWatch log group to adopt during migration. Leave null for a new log group."
+  type        = string
+  default     = null
+  nullable    = true
+}
+
 variable "vpc_cidr" {
   type    = string
   default = "10.40.0.0/16"

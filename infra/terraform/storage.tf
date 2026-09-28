@@ -1,5 +1,5 @@
 resource "aws_s3_bucket" "model_artifacts" {
-  bucket = "${local.name}-models-${random_id.bucket_suffix.hex}"
+  bucket = local.artifact_bucket_name
 }
 
 resource "aws_s3_bucket_public_access_block" "model_artifacts" {
@@ -35,7 +35,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "model_artifacts" {
 }
 
 resource "aws_ecr_repository" "api" {
-  name                 = "${local.name}-api"
+  name                 = local.ecr_repository_name
   image_tag_mutability = "IMMUTABLE"
   image_scanning_configuration { scan_on_push = true }
   encryption_configuration { encryption_type = "AES256" }
