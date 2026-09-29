@@ -19,6 +19,19 @@ def test_health(client):
     assert response.headers["X-Request-ID"]
 
 
+def test_frontend_is_served(client):
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "FairValue Japan" in response.text
+    assert 'href="/static/styles.css"' in response.text
+
+
+def test_frontend_assets_are_served(client):
+    response = client.get("/static/app.js")
+    assert response.status_code == 200
+    assert "fetchPrediction" in response.text
+
+
 def test_prediction(client):
     response = client.post("/v1/predict", json=valid_payload())
     assert response.status_code == 200

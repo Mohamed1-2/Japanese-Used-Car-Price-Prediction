@@ -3,6 +3,7 @@
 from contextlib import asynccontextmanager
 import json
 import logging
+from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
@@ -10,7 +11,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import Settings
 from app.logging_config import configure_logging
@@ -75,6 +77,8 @@ def create_app(settings=None, predictor=None, options=None):
         lifespan=lifespan,
     )
     application.state.settings = settings
+    static_dir = Path(__file__).resolve().parent / "static"
+    application.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     if settings.cors_origins:
         application.add_middleware(
@@ -143,11 +147,7 @@ def create_app(settings=None, predictor=None, options=None):
 
     @application.get("/", include_in_schema=False)
     def root():
-        return {
-            "service": settings.app_name,
-            "version": settings.app_version,
-            "docs": "/docs",
-        }
+        return FileResponse(static_dir / "index.html")
 
     @application.get("/health", response_model=HealthResponse, tags=["operations"])
     def health(request: Request):
