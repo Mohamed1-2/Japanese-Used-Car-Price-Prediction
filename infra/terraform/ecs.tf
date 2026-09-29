@@ -91,10 +91,34 @@ resource "aws_ecs_task_definition" "api" {
   volume { name = "tmp" }
 
   container_definitions = jsonencode([{
+    name                   = "volume-init"
+    image                  = "${aws_ecr_repository.api.repository_url}:${var.initial_image_tag}"
+    essential              = false
+    user                   = "0"
+    readonlyRootFilesystem = true
+    command                = ["sh", "-c", "chown -R 10001:10001 /models /tmp"]
+    mountPoints = [
+      { sourceVolume = "model-cache", containerPath = "/models", readOnly = false },
+      { sourceVolume = "tmp", containerPath = "/tmp", readOnly = false }
+    ]
+    logConfiguration = {
+      logDriver = "awslogs"
+      options = {
+        awslogs-group         = aws_cloudwatch_log_group.api.name
+        awslogs-region        = var.aws_region
+        awslogs-stream-prefix = "volume-init"
+      }
+    }
+    }, {
     name                   = "api"
     image                  = "${aws_ecr_repository.api.repository_url}:${var.initial_image_tag}"
     essential              = true
+    user                   = "10001"
     readonlyRootFilesystem = true
+    dependsOn = [{
+      containerName = "volume-init"
+      condition     = "SUCCESS"
+    }]
     portMappings = [{
       containerPort = var.container_port
       hostPort      = var.container_port

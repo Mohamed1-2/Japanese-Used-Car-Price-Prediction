@@ -68,18 +68,26 @@ jobs:
             .registeredBy
           )' task-definition-raw.json > task-definition.json
 
-      - name: Render task definition
-        id: render
+      - name: Render API container
+        id: render-api
         uses: aws-actions/amazon-ecs-render-task-definition@v1
         with:
           task-definition: task-definition.json
           container-name: ${{ env.ECS_CONTAINER }}
           image: ${{ steps.image.outputs.uri }}
 
+      - name: Render volume initialization container
+        id: render-init
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ${{ steps.render-api.outputs.task-definition }}
+          container-name: volume-init
+          image: ${{ steps.image.outputs.uri }}
+
       - name: Deploy task definition
         uses: aws-actions/amazon-ecs-deploy-task-definition@v2
         with:
-          task-definition: ${{ steps.render.outputs.task-definition }}
+          task-definition: ${{ steps.render-init.outputs.task-definition }}
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
