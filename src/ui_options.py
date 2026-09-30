@@ -63,6 +63,27 @@ def build_ui_options(data):
     ]
     eligible["registration_year"] = eligible["registration_year"].astype(int)
 
+    # These six records are known make/model parse conflicts in the current
+    # Carsensor/GooNet snapshot. They would otherwise expose impossible cars
+    # (for example a Honda Sienta) in the public form. Keep the rule explicit
+    # and scoped to UI choices; do not silently rewrite model training rows.
+    known_make_model_conflicts = {
+        ("ホンダ", "シエンタ"),
+        ("ホンダ", "ヴォクシー"),
+        ("トヨタ", "ノート"),
+        ("トヨタ", "ルークス"),
+        ("日産", "スペーシアカスタム"),
+        ("国産車その他", "デイズ"),
+    }
+    pairs = pd.MultiIndex.from_arrays(
+        [eligible["manufacturer"], eligible["model"]]
+    )
+    eligible = eligible.loc[~pairs.isin(known_make_model_conflicts)]
+    # Generic parser buckets aren't useful as customer-facing makes.
+    eligible = eligible.loc[
+        ~eligible["manufacturer"].isin({"輸入車その他", "国産車その他"})
+    ]
+
     vehicle_options = {}
     grouped = eligible.groupby(
         ["manufacturer", "model", "registration_year"], sort=True, observed=True
@@ -72,6 +93,7 @@ def build_ui_options(data):
             "fuel": _values(rows["fuel"]),
             "transmission": _values(rows["transmission"]),
             "drivetrain": _values(rows["drivetrain"]),
+            "trim": _values(rows["trim"]),
         }
 
     make_to_models = {
@@ -81,8 +103,47 @@ def build_ui_options(data):
         "schema_version": 2,
         "manufacturer_to_models": make_to_models,
         "vehicle_options": vehicle_options,
+        "model_display_names": {
+            "シトロエンDS21 1年保証付き": "DS21",
+        },
         "fuel_values": _values(eligible["fuel"]),
         "transmission_values": _values(eligible["transmission"]),
         "drivetrain_values": _values(eligible["drivetrain"]),
         "prefecture_values": _values(eligible["prefecture"]),
     }
+
+
+def validate_prediction_options(payload, options):
+    """Reject unsupported vehicle/configuration values before model inference."""
+    if not options or "vehicle_options" not in options:
+        # Backward compatibility while an older options artifact is deployed.
+        make_models = (options or {}).get("manufacturer_to_models", {})
+        if payload.get("manufacturer") not in make_models:
+            raise ValueError("Choose a manufacturer from the available options.")
+        if payload.get("model") not in make_models[payload["manufacturer"]]:
+            raise ValueError("Choose a model available for that manufacturer.")
+        return
+
+    vehicle_options = options["vehicle_options"]
+    make = payload.get("manufacturer")
+    model = payload.get("model")
+    by_year = vehicle_options.get(make, {}).get(model)
+    if not by_year:
+        raise ValueError("Choose a model available for that manufacturer.")
+
+    try:
+        year_key = str(int(payload.get("registration_year")))
+    except (TypeError, ValueError):
+        raise ValueError("Choose a registration year from the available options.") from None
+    config = by_year.get(year_key)
+    if not config:
+        raise ValueError("That registration year is not listed for this model.")
+
+    for field in ("fuel", "transmission", "drivetrain", "trim"):
+        value = payload.get(field)
+        if value not in (None, "") and value not in config.get(field, []):
+            raise ValueError(f"Choose a listed {field.replace('_', ' ')} for this vehicle.")
+
+    prefecture = payload.get("prefecture")
+    if prefecture not in (None, "") and prefecture not in options.get("prefecture_values", []):
+        raise ValueError("Choose a prefecture from the available options.")

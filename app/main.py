@@ -24,6 +24,7 @@ from app.schemas import (
     PredictionResponse,
 )
 from src.pipeline.fair_price_inference import FairPricePredictor
+from src.ui_options import validate_prediction_options
 
 logger = logging.getLogger("fair_price_api")
 
@@ -182,6 +183,10 @@ def create_app(settings=None, predictor=None, options=None):
     )
     def predict(payload: PredictionRequest, request: Request):
         try:
+            validate_prediction_options(
+                payload.model_dump(exclude_none=True),
+                request.app.state.ui_options,
+            )
             return request.app.state.predictor.predict(
                 payload.model_dump(exclude_none=True)
             )
