@@ -6,13 +6,13 @@
     <meta name="theme-color" content="#091a2a" />
     <meta
       name="description"
-      content="AI-assisted fair price estimates for Japanese used cars."
+      content="Market-informed fair price estimates for Japanese used cars."
     />
     <title>FairValue Japan — Used car price intelligence</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="/static/styles.css" />
@@ -33,28 +33,34 @@
           <span><strong>FairValue</strong><small>JAPAN</small></span>
         </a>
         <nav aria-label="Primary navigation">
-          <a href="#valuation">Valuation</a>
-          <a href="#method">How it works</a>
-          <a href="/docs">API</a>
+          <a href="#valuation" data-i18n="navValuation">Valuation</a>
+          <a href="#method" data-i18n="navMethod">How it works</a>
+          <a href="#about" data-i18n="navAbout">About</a>
         </nav>
-        <div class="status-pill" id="api-status" aria-live="polite">
-          <span></span> Checking service
+        <div class="header-tools">
+          <div class="language-toggle" role="group" aria-label="Language">
+            <button type="button" data-language="en" class="active">EN</button>
+            <button type="button" data-language="ja">日本語</button>
+          </div>
+          <div class="status-pill" id="api-status" aria-live="polite">
+            <span></span><b data-i18n="statusChecking">Checking service</b>
+          </div>
         </div>
       </header>
 
       <main>
         <section class="hero">
           <div class="hero-copy">
-            <div class="eyebrow"><span>AI MARKET INTELLIGENCE</span><i></i><span>JAPAN</span></div>
-            <h1>Know the market.<br /><em>Price with confidence.</em></h1>
-            <p>
-              A data-driven estimate for Japanese used cars, trained on more than
-              100,000 market listings and calibrated with an expected price range.
+            <div class="eyebrow"><span data-i18n="eyebrow">MARKET PRICE INTELLIGENCE</span><i></i><span>JAPAN</span></div>
+            <h1><span data-i18n="heroTitle">Know the market.</span><br /><em data-i18n="heroAccent">Price with confidence.</em></h1>
+            <p data-i18n="heroBody">
+              A market-informed valuation for Japanese used cars, built from more than
+              100,000 listings and presented with an expected price range.
             </p>
-            <div class="hero-metrics" aria-label="Model highlights">
-              <div><strong>100K+</strong><span>market listings</span></div>
-              <div><strong>80%</strong><span>range coverage</span></div>
-              <div><strong>&lt; 2 sec</strong><span>instant estimate</span></div>
+            <div class="hero-metrics" aria-label="Market highlights">
+              <div><strong>100K+</strong><span data-i18n="metricListings">market listings</span></div>
+              <div><strong>80%</strong><span data-i18n="metricCoverage">range coverage</span></div>
+              <div><strong>&lt; 2 sec</strong><span data-i18n="metricSpeed">instant estimate</span></div>
             </div>
           </div>
           <div class="hero-art" aria-hidden="true">
@@ -68,15 +74,15 @@
               <circle cx="566" cy="242" r="49" /><circle cx="566" cy="242" r="22" />
               <path d="M83 196h53m455-1h55M376 72v89m-160 18h330" />
             </svg>
-            <div class="floating-card card-one"><span>LIVE MODEL</span><strong>LightGBM</strong></div>
-            <div class="floating-card card-two"><span>REFERENCE</span><strong id="reference-year">2026</strong></div>
+            <div class="floating-card card-one"><span data-i18n="marketStatus">MARKET STATUS</span><strong data-i18n="marketLive">Live pricing</strong></div>
+            <div class="floating-card card-two"><span data-i18n="marketYear">MARKET YEAR</span><strong id="reference-year">2026</strong></div>
           </div>
         </section>
 
         <section class="valuation-wrap" id="valuation">
           <div class="section-heading">
-            <div><span class="kicker">01 / VEHICLE PROFILE</span><h2>Tell us about the car</h2></div>
-            <p>Required details are marked with an asterisk. More information improves the estimate.</p>
+            <div><span class="kicker" data-i18n="vehicleProfile">01 / VEHICLE PROFILE</span><h2 data-i18n="tellUs">Tell us about the car</h2></div>
+            <p data-i18n="requiredHint">Required details are marked with an asterisk. More information improves the estimate.</p>
           </div>
 
           <div class="workspace">
@@ -84,23 +90,23 @@
               <div class="form-section">
                 <div class="section-number">01</div>
                 <div class="form-content">
-                  <h3>Identity</h3>
+                  <h3 data-i18n="identity">Identity</h3>
                   <div class="field-grid">
                     <label class="field">
-                      <span>Manufacturer <b>*</b></span>
+                      <span><i data-i18n="manufacturer">Manufacturer</i> <b>*</b></span>
                       <select id="manufacturer" name="manufacturer" required>
-                        <option value="">Select manufacturer</option>
+                        <option value="" data-i18n="selectManufacturer">Select manufacturer</option>
                       </select>
                     </label>
                     <label class="field">
-                      <span>Model <b>*</b></span>
+                      <span><i data-i18n="model">Model</i> <b>*</b></span>
                       <select id="model" name="model" required disabled>
-                        <option value="">Select manufacturer first</option>
+                        <option value="" data-i18n="selectManufacturerFirst">Select manufacturer first</option>
                       </select>
                     </label>
                     <label class="field full-field">
-                      <span>Grade / trim</span>
-                      <input name="trim" type="text" maxlength="500" placeholder="e.g. 2.5 S C Package" />
+                      <span data-i18n="trim">Grade / trim</span>
+                      <input name="trim" type="text" maxlength="500" placeholder="e.g. 2.5 S C Package" data-i18n-placeholder="trimPlaceholder" />
                     </label>
                   </div>
                 </div>
@@ -109,14 +115,14 @@
               <div class="form-section">
                 <div class="section-number">02</div>
                 <div class="form-content">
-                  <h3>Age &amp; usage</h3>
+                  <h3 data-i18n="ageUsage">Age &amp; usage</h3>
                   <div class="field-grid">
                     <label class="field">
-                      <span>Registration year <b>*</b></span>
+                      <span><i data-i18n="registrationYear">Registration year</i> <b>*</b></span>
                       <select id="registration-year" name="registration_year" required></select>
                     </label>
                     <label class="field mileage-field">
-                      <span>Mileage <b>*</b></span>
+                      <span><i data-i18n="mileage">Mileage</i> <b>*</b></span>
                       <div class="input-suffix"><input name="mileage_km" type="number" min="0" max="2000000" step="1000" value="42000" required /><span>km</span></div>
                       <input id="mileage-range" aria-label="Mileage slider" type="range" min="0" max="250000" step="1000" value="42000" />
                     </label>
@@ -127,68 +133,68 @@
               <div class="form-section">
                 <div class="section-number">03</div>
                 <div class="form-content">
-                  <h3>Configuration</h3>
+                  <h3 data-i18n="configuration">Configuration</h3>
                   <div class="field-grid triple-grid">
-                    <label class="field"><span>Fuel</span><select id="fuel" name="fuel"><option value="">Not specified</option></select></label>
-                    <label class="field"><span>Transmission</span><select id="transmission" name="transmission"><option value="">Not specified</option></select></label>
-                    <label class="field"><span>Drivetrain</span><select id="drivetrain" name="drivetrain"><option value="">Not specified</option></select></label>
-                    <label class="field"><span>Prefecture</span><select id="prefecture" name="prefecture"><option value="">Not specified</option></select></label>
-                    <label class="field"><span>Repair history</span><select name="repair_history"><option value="">Unknown</option><option value="false">None reported</option><option value="true">Reported</option></select></label>
+                    <label class="field"><span data-i18n="fuel">Fuel</span><select id="fuel" name="fuel"><option value="" data-i18n="notSpecified">Not specified</option></select></label>
+                    <label class="field"><span data-i18n="transmission">Transmission</span><select id="transmission" name="transmission"><option value="" data-i18n="notSpecified">Not specified</option></select></label>
+                    <label class="field"><span data-i18n="drivetrain">Drivetrain</span><select id="drivetrain" name="drivetrain"><option value="" data-i18n="notSpecified">Not specified</option></select></label>
+                    <label class="field"><span data-i18n="prefecture">Prefecture</span><select id="prefecture" name="prefecture"><option value="" data-i18n="notSpecified">Not specified</option></select></label>
+                    <label class="field"><span data-i18n="repairHistory">Repair history</span><select name="repair_history"><option value="" data-i18n="unknown">Unknown</option><option value="false" data-i18n="noneReported">None reported</option><option value="true" data-i18n="reported">Reported</option></select></label>
                   </div>
                 </div>
               </div>
 
               <div class="form-actions">
-                <p><span class="privacy-icon">✓</span> Your vehicle details are used only for this estimate.</p>
-                <button type="submit" id="submit-button"><span>Calculate fair value</span><b>→</b></button>
+                <p><span class="privacy-icon">✓</span> <i data-i18n="privacy">Your vehicle details are used only for this estimate.</i></p>
+                <button type="submit" id="submit-button"><span data-i18n="calculate">Calculate fair value</span><b>→</b></button>
               </div>
             </form>
 
             <aside class="result-panel" id="result-panel" aria-live="polite">
               <div class="result-empty" id="result-empty">
                 <div class="radar"><span></span><i></i><b></b></div>
-                <h3>Your valuation<br />will appear here</h3>
-                <p>Complete the vehicle profile to calculate a market-informed estimate.</p>
-                <ul><li>Fair advertised price</li><li>Expected market range</li><li>Model confidence context</li></ul>
+                <h3><span data-i18n="valuationHere">Your valuation will appear here</span></h3>
+                <p data-i18n="completeProfile">Complete the vehicle profile to calculate a market-informed estimate.</p>
+                <ul><li data-i18n="fairPrice">Fair advertised price</li><li data-i18n="expectedRange">Expected market range</li><li data-i18n="marketContext">Market confidence context</li></ul>
               </div>
 
               <div class="result-loading" id="result-loading" hidden>
                 <div class="loader-rings"><i></i><i></i><i></i></div>
-                <h3>Reading the market</h3>
-                <p>Comparing vehicle attributes against recent listings…</p>
+                <h3 data-i18n="readingMarket">Reading the market</h3>
+                <p data-i18n="comparing">Comparing vehicle attributes against recent listings…</p>
               </div>
 
               <div class="result-content" id="result-content" hidden>
-                <div class="result-topline"><span>ESTIMATED FAIR VALUE</span><span class="confidence-badge">80% RANGE</span></div>
+                <div class="result-topline"><span data-i18n="estimatedValue">ESTIMATED FAIR VALUE</span><span class="confidence-badge" data-i18n="rangeBadge">80% RANGE</span></div>
                 <div class="price" id="fair-price">¥0</div>
-                <p class="price-caption">Estimated advertised vehicle price</p>
+                <p class="price-caption" data-i18n="advertisedPrice">Estimated advertised vehicle price</p>
                 <div class="range-card">
-                  <div class="range-labels"><span id="range-low">¥0</span><strong>EXPECTED RANGE</strong><span id="range-high">¥0</span></div>
+                  <div class="range-labels"><span id="range-low">¥0</span><strong data-i18n="expectedRangeUpper">EXPECTED RANGE</strong><span id="range-high">¥0</span></div>
                   <div class="range-track"><i></i><span id="range-marker"></span></div>
                 </div>
                 <div class="vehicle-summary" id="vehicle-summary"></div>
-                <div class="result-notice"><b>Market guidance</b><p>Condition, options, dealer fees and local demand may change the final selling price.</p></div>
-                <button class="reset-button" id="reset-button" type="button">Start another valuation</button>
+                <div class="result-notice"><b data-i18n="guidance">Market guidance</b><p data-i18n="guidanceBody">Condition, options, dealer fees and local demand may change the final selling price.</p></div>
+                <button class="reset-button" id="reset-button" type="button" data-i18n="startAnother">Start another valuation</button>
               </div>
 
               <div class="result-error" id="result-error" hidden>
-                <span>!</span><h3>We couldn't calculate that estimate</h3><p id="error-message"></p><button type="button" id="retry-button">Review details</button>
+                <span>!</span><h3 data-i18n="couldNotCalculate">We couldn't calculate that estimate</h3><p id="error-message"></p><button type="button" id="retry-button" data-i18n="reviewDetails">Review details</button>
               </div>
             </aside>
           </div>
         </section>
 
         <section class="method" id="method">
-          <div class="method-intro"><span class="kicker">02 / METHODOLOGY</span><h2>From listing data<br />to a clearer decision.</h2><p>The model evaluates the signals that shape advertised prices across Japan, then returns a central estimate and calibrated range.</p></div>
+          <div class="method-intro"><span class="kicker" data-i18n="methodology">02 / METHODOLOGY</span><h2 data-i18n="clearerDecision">From market data to a clearer decision.</h2><p data-i18n="methodBody">Our pricing engine evaluates the signals that shape advertised prices across Japan, then returns a central estimate and expected range.</p></div>
           <div class="method-steps">
-            <article><span>01</span><div><h3>Describe the vehicle</h3><p>Manufacturer, model, age, mileage and configuration form the valuation profile.</p></div></article>
-            <article><span>02</span><div><h3>Compare market patterns</h3><p>LightGBM evaluates nonlinear relationships learned from the expanded listing dataset.</p></div></article>
-            <article><span>03</span><div><h3>Understand the range</h3><p>The expected interval expresses real market variation around the fair-price estimate.</p></div></article>
+            <article><span>01</span><div><h3 data-i18n="describeVehicle">Describe the vehicle</h3><p data-i18n="describeBody">Manufacturer, model, age, mileage and configuration form the valuation profile.</p></div></article>
+            <article><span>02</span><div><h3 data-i18n="comparePatterns">Compare market patterns</h3><p data-i18n="compareBody">Our valuation engine evaluates pricing relationships across the expanded market dataset.</p></div></article>
+            <article><span>03</span><div><h3 data-i18n="understandRange">Understand the range</h3><p data-i18n="rangeBody">The expected interval expresses real market variation around the fair-price estimate.</p></div></article>
           </div>
         </section>
       </main>
 
-      <footer><div class="brand footer-brand"><span class="brand-mark">価</span><span><strong>FairValue</strong><small>JAPAN</small></span></div><p>Decision support for the Japanese used-car market.</p><div><a href="/docs">API docs</a><a href="/health">Service status</a></div></footer>
+      <footer id="about"><div class="brand footer-brand"><span class="brand-mark">価</span><span><strong>FairValue</strong><small>JAPAN</small></span></div><p data-i18n="footerText">Clearer decisions for the Japanese used-car market.</p><div><a href="#valuation" data-i18n="getValuation">Get a valuation</a><a href="#method" data-i18n="ourMethod">Our method</a></div></footer>
     </div>
   </body>
 </html>

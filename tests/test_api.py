@@ -24,6 +24,10 @@ def test_frontend_is_served(client):
     assert response.status_code == 200
     assert "FairValue Japan" in response.text
     assert 'href="/static/styles.css"' in response.text
+    assert 'data-language="en"' in response.text
+    assert 'data-language="ja"' in response.text
+    assert "LightGBM" not in response.text
+    assert "AI MARKET" not in response.text
 
 
 def test_frontend_assets_are_served(client):
