@@ -82,6 +82,13 @@ BMW_MODEL_ENGLISH_NAMES = {
     "iX3": "iX3",
 }
 
+MODEL_ENGLISH_NAMES = {
+    **BMW_MODEL_ENGLISH_NAMES,
+    "BYD ATTO 3": "ATTO 3",
+    "BYDシール": "SEAL",
+    "BYDドルフィン": "DOLPHIN",
+}
+
 
 def normalize_text(value):
     if pd.isna(value):
@@ -213,7 +220,7 @@ def build_ui_options(data):
         },
         "model_english_names": {
             model: label
-            for model, label in BMW_MODEL_ENGLISH_NAMES.items()
+            for model, label in MODEL_ENGLISH_NAMES.items()
             if model in {value for models in make_to_models.values() for value in models}
         },
         "fuel_values": _values(eligible["fuel"]),
@@ -250,9 +257,13 @@ def validate_prediction_options(payload, options):
         raise ValueError("That registration year is not listed for this model.")
 
     selected_trim = payload.get("trim")
+    if config.get("trim") and selected_trim in (None, ""):
+        raise ValueError("Choose a trim available for this vehicle.")
     validated_config = config.get("trim_options", {}).get(selected_trim, config)
     for field in ("fuel", "transmission", "drivetrain"):
         value = payload.get(field)
+        if validated_config.get(field) and value in (None, ""):
+            raise ValueError(f"Choose a {field.replace('_', ' ')} for this vehicle.")
         if value not in (None, "") and value not in validated_config.get(field, []):
             raise ValueError(f"Choose a listed {field.replace('_', ' ')} for this vehicle.")
 

@@ -110,6 +110,15 @@ function populateSelect(id, values, type) {
   if ([...select.options].some((item) => item.value === current)) select.value = current;
 }
 
+function populateDependentSelect(id, values, type, required = false) {
+  populateSelect(id, values, type);
+  const select = $(id);
+  select.disabled = values.length === 0;
+  select.required = required && values.length > 0;
+  if (values.length === 1) select.value = values[0];
+  return select.value;
+}
+
 function buildYears(referenceYear = new Date().getFullYear(), availableYears = null) {
   const yearSelect = $("#registration-year");
   const current = yearSelect.value;
@@ -119,6 +128,7 @@ function buildYears(referenceYear = new Date().getFullYear(), availableYears = n
     yearSelect.append(option(String(year), String(year)));
   });
   if (years.map(String).includes(current)) yearSelect.value = current;
+  yearSelect.disabled = years.length === 0;
 }
 
 function selectedVehicleYears() {
@@ -128,17 +138,19 @@ function selectedVehicleYears() {
 function updateConfigurationOptions() {
   const byYear = selectedVehicleYears();
   const configuration = byYear?.[$("#registration-year").value];
-  populateSelect("#trim", configuration?.trim || [], "option");
-  $("#trim").disabled = !configuration?.trim?.length;
-  const trimConfiguration = configuration?.trim_options?.[$("#trim").value] || configuration;
-  populateSelect("#fuel", trimConfiguration?.fuel || state.options?.fuel_values || [], "option");
-  populateSelect("#transmission", trimConfiguration?.transmission || state.options?.transmission_values || [], "option");
-  populateSelect("#drivetrain", trimConfiguration?.drivetrain || state.options?.drivetrain_values || [], "option");
+  const trims = configuration?.trim || [];
+  const selectedTrim = populateDependentSelect("#trim", trims, "option", true);
+  const trimConfiguration = trims.length
+    ? configuration?.trim_options?.[selectedTrim]
+    : configuration;
+  populateDependentSelect("#fuel", trimConfiguration?.fuel || [], "option", true);
+  populateDependentSelect("#transmission", trimConfiguration?.transmission || [], "option", true);
+  populateDependentSelect("#drivetrain", trimConfiguration?.drivetrain || [], "option", true);
 }
 
 function updateYears() {
   const byYear = selectedVehicleYears();
-  const years = byYear ? Object.keys(byYear).map(Number).sort((a, b) => b - a) : null;
+  const years = byYear ? Object.keys(byYear).map(Number).sort((a, b) => b - a) : [];
   buildYears(state.marketInfo?.model_reference_year, years);
   updateConfigurationOptions();
 }
@@ -181,7 +193,7 @@ async function loadApplicationData() {
     status.classList.toggle("ready", health.status === "ok");
     status.querySelector("b").textContent = health.status === "ok" ? t("statusOnline") : t("statusChecking");
   } catch (error) {
-    buildYears();
+    buildYears(new Date().getFullYear(), []);
     status.querySelector("b").textContent = t("statusUnavailable");
     showError(t("loadError"));
   }
