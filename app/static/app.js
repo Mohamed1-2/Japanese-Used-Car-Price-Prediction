@@ -61,7 +61,12 @@ function romanizeKana(value) {
 
 function englishLabel(value, type) {
   if (type === "manufacturer") return manufacturerEnglish[value] || romanizeKana(value);
-  if (type === "model") return modelEnglish[value] || romanizeKana(value);
+  if (type === "model") {
+    const curated = state.options?.model_english_names?.[value] || modelEnglish[value];
+    if (curated) return curated;
+    const hasJapanese = /[\u3040-\u30ff\u4e00-\u9faf]/.test(value);
+    return hasJapanese ? `${romanizeKana(value)} (${value})` : value;
+  }
   if (type === "prefecture") return prefectureEnglish[value] || romanizeKana(value);
   if (optionEnglish[value]) return optionEnglish[value];
   let label = value;
@@ -123,11 +128,12 @@ function selectedVehicleYears() {
 function updateConfigurationOptions() {
   const byYear = selectedVehicleYears();
   const configuration = byYear?.[$("#registration-year").value];
-  populateSelect("#fuel", configuration?.fuel || state.options?.fuel_values || [], "option");
-  populateSelect("#transmission", configuration?.transmission || state.options?.transmission_values || [], "option");
-  populateSelect("#drivetrain", configuration?.drivetrain || state.options?.drivetrain_values || [], "option");
   populateSelect("#trim", configuration?.trim || [], "option");
   $("#trim").disabled = !configuration?.trim?.length;
+  const trimConfiguration = configuration?.trim_options?.[$("#trim").value] || configuration;
+  populateSelect("#fuel", trimConfiguration?.fuel || state.options?.fuel_values || [], "option");
+  populateSelect("#transmission", trimConfiguration?.transmission || state.options?.transmission_values || [], "option");
+  populateSelect("#drivetrain", trimConfiguration?.drivetrain || state.options?.drivetrain_values || [], "option");
 }
 
 function updateYears() {
@@ -254,6 +260,7 @@ form.addEventListener("submit", async (event) => {
 manufacturer.addEventListener("change", updateModels);
 model.addEventListener("change", updateYears);
 $("#registration-year").addEventListener("change", updateConfigurationOptions);
+$("#trim").addEventListener("change", updateConfigurationOptions);
 mileageRange.addEventListener("input", () => { mileageInput.value = mileageRange.value; });
 mileageInput.addEventListener("input", () => { mileageRange.value = Math.min(250000, Number(mileageInput.value || 0)); });
 $("#reset-button").addEventListener("click", () => { form.reset(); model.disabled = true; updateModels(); mileageRange.value = mileageInput.value; setPanel("#result-empty"); form.scrollIntoView({ behavior: "smooth" }); });
