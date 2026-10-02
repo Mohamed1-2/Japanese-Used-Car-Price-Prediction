@@ -185,7 +185,10 @@ def build_ui_options(data):
         != eligible["model"].str.casefold()
     ].copy()
     eligible["drivetrain_option"] = eligible.apply(_realistic_drivetrain, axis=1)
-    eligible["trim_option"] = eligible["trim"].map(normalize_text)
+    if "trim" in eligible:
+        eligible["trim_option"] = eligible["trim"].map(normalize_text)
+    else:
+        eligible["trim_option"] = UNKNOWN
 
     vehicle_options = {}
     grouped = eligible.groupby(
@@ -200,13 +203,15 @@ def build_ui_options(data):
                 "transmission": _values(trim_rows["transmission"]),
                 "drivetrain": _values(trim_rows["drivetrain_option"]),
             }
-        vehicle_options.setdefault(make, {}).setdefault(model, {})[str(year)] = {
+        configuration = {
             "fuel": _values(rows["fuel"]),
             "transmission": _values(rows["transmission"]),
             "drivetrain": _values(rows["drivetrain_option"]),
-            "trim": sorted(trim_options),
-            "trim_options": trim_options,
         }
+        if trim_options:
+            configuration["trim"] = sorted(trim_options)
+            configuration["trim_options"] = trim_options
+        vehicle_options.setdefault(make, {}).setdefault(model, {})[str(year)] = configuration
 
     make_to_models = {
         make: sorted(models) for make, models in vehicle_options.items()
