@@ -3,6 +3,7 @@
 from contextlib import asynccontextmanager
 import json
 import logging
+from pathlib import Path
 from time import perf_counter
 from uuid import uuid4
 
@@ -10,7 +11,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.config import Settings
 from app.logging_config import configure_logging
@@ -22,6 +24,7 @@ from app.schemas import (
     PredictionResponse,
 )
 from src.pipeline.fair_price_inference import FairPricePredictor
+from src.ui_options import validate_prediction_options
 
 logger = logging.getLogger("fair_price_api")
 
@@ -75,6 +78,8 @@ def create_app(settings=None, predictor=None, options=None):
         lifespan=lifespan,
     )
     application.state.settings = settings
+    static_dir = Path(__file__).resolve().parent / "static"
+    application.mount("/static", StaticFiles(directory=static_dir), name="static")
 
     if settings.cors_origins:
         application.add_middleware(
@@ -143,11 +148,7 @@ def create_app(settings=None, predictor=None, options=None):
 
     @application.get("/", include_in_schema=False)
     def root():
-        return {
-            "service": settings.app_name,
-            "version": settings.app_version,
-            "docs": "/docs",
-        }
+        return FileResponse(static_dir / "index.html")
 
     @application.get("/health", response_model=HealthResponse, tags=["operations"])
     def health(request: Request):
@@ -182,6 +183,10 @@ def create_app(settings=None, predictor=None, options=None):
     )
     def predict(payload: PredictionRequest, request: Request):
         try:
+            validate_prediction_options(
+                payload.model_dump(exclude_none=True),
+                request.app.state.ui_options,
+            )
             return request.app.state.predictor.predict(
                 payload.model_dump(exclude_none=True)
             )
