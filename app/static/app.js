@@ -139,7 +139,8 @@ function updateConfigurationOptions() {
   const byYear = selectedVehicleYears();
   const configuration = byYear?.[$("#registration-year").value];
   const trims = configuration?.trim || [];
-  const selectedTrim = populateDependentSelect("#trim", trims, "option", true, configuration ? "selectTrim" : "selectYearFirst");
+  const trimPlaceholder = !configuration ? "selectYearFirst" : (trims.length ? "selectTrim" : "notSpecified");
+  const selectedTrim = populateDependentSelect("#trim", trims, "option", true, trimPlaceholder);
   $("#trim-required-marker").hidden = trims.length === 0;
   const trimConfiguration = trims.length
     ? configuration?.trim_options?.[selectedTrim]
