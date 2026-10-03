@@ -104,10 +104,6 @@
                         <option value="" data-i18n="selectManufacturerFirst">Select manufacturer first</option>
                       </select>
                     </label>
-                    <label class="field full-field">
-                      <span data-i18n="trim">Grade / trim</span>
-                      <select id="trim" name="trim" disabled><option value="" data-i18n="notSpecified">Not specified</option></select>
-                    </label>
                   </div>
                 </div>
               </div>
@@ -125,6 +121,10 @@
                       <span><i data-i18n="mileage">Mileage</i> <b>*</b></span>
                       <div class="input-suffix"><input name="mileage_km" type="number" min="0" max="2000000" step="1000" value="42000" required /><span>km</span></div>
                       <input id="mileage-range" aria-label="Mileage slider" type="range" min="0" max="250000" step="1000" value="42000" />
+                    </label>
+                    <label class="field full-field">
+                      <span><i data-i18n="trim">Grade / trim</i> <b id="trim-required-marker" hidden>*</b></span>
+                      <select id="trim" name="trim" disabled><option value="" data-i18n="selectYearFirst">Select registration year first</option></select>
                     </label>
                   </div>
                 </div>
