@@ -23,6 +23,7 @@ cors_origins = ""
 # Add an ACM certificate after your DNS name is ready. HTTP is intended only
 # for initial validation; public production traffic should use HTTPS.
 certificate_arn = null
+public_hostname = null
 
 # If the AWS account already has token.actions.githubusercontent.com configured,
 # provide its ARN to prevent creation of a duplicate account-level provider.
