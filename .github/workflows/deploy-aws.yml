@@ -22,7 +22,7 @@ jobs:
       ECS_SERVICE: ${{ vars.ECS_SERVICE }}
       ECS_TASK_FAMILY: ${{ vars.ECS_TASK_FAMILY }}
       ECS_CONTAINER: ${{ vars.ECS_CONTAINER }}
-      API_HEALTH_URL: ${{ vars.API_HEALTH_URL }}
+      API_HEALTH_URL: https://used-cars.mohammedaldoufani.com/health
 
     steps:
       - uses: actions/checkout@v4
