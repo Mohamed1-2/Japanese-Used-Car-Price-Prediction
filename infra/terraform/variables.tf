@@ -113,6 +113,28 @@ variable "certificate_arn" {
   nullable    = true
 }
 
+variable "public_hostname" {
+  description = "Public DNS hostname covered by the ACM certificate."
+  type        = string
+  default     = null
+  nullable    = true
+
+  validation {
+    condition = (
+      var.public_hostname == null
+      || can(regex("^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$", var.public_hostname))
+    )
+    error_message = "public_hostname must be a valid lowercase DNS hostname."
+  }
+}
+
+check "https_has_public_hostname" {
+  assert {
+    condition     = var.certificate_arn == null || var.public_hostname != null
+    error_message = "public_hostname must be set when certificate_arn is configured."
+  }
+}
+
 variable "github_owner" {
   type    = string
   default = "Mohamed1-2"

@@ -43,13 +43,19 @@ resource "aws_lb_listener" "http" {
   load_balancer_arn = aws_lb.api.arn
   port              = 80
   protocol          = "HTTP"
-  default_action {
-    type             = var.certificate_arn == null ? "forward" : "redirect"
-    target_group_arn = var.certificate_arn == null ? aws_lb_target_group.api.arn : null
+  dynamic "default_action" {
+    for_each = var.certificate_arn == null ? [1] : []
+    content {
+      type             = "forward"
+      target_group_arn = aws_lb_target_group.api.arn
+    }
+  }
 
-    dynamic "redirect" {
-      for_each = var.certificate_arn == null ? [] : [1]
-      content {
+  dynamic "default_action" {
+    for_each = var.certificate_arn == null ? [] : [1]
+    content {
+      type = "redirect"
+      redirect {
         port        = "443"
         protocol    = "HTTPS"
         status_code = "HTTP_301"

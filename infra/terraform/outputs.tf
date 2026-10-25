@@ -1,5 +1,5 @@
 output "api_url" {
-  value = "${var.certificate_arn == null ? "http" : "https"}://${aws_lb.api.dns_name}"
+  value = "${var.certificate_arn == null ? "http" : "https"}://${coalesce(var.public_hostname, aws_lb.api.dns_name)}"
 }
 
 output "artifact_bucket" {
@@ -47,6 +47,6 @@ output "github_repository_variables" {
     ECS_SERVICE     = aws_ecs_service.api.name
     ECS_TASK_FAMILY = aws_ecs_task_definition.api.family
     ECS_CONTAINER   = "api"
-    API_HEALTH_URL  = "${var.certificate_arn == null ? "http" : "https"}://${aws_lb.api.dns_name}/health"
+    API_HEALTH_URL  = "${var.certificate_arn == null ? "http" : "https"}://${coalesce(var.public_hostname, aws_lb.api.dns_name)}/health"
   }
 }
